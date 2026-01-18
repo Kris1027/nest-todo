@@ -1,48 +1,44 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Todo } from './entities/todo.entity';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TodoService {
-  private todos: Todo[] = [];
-  private idCounter = 1;
+  constructor(private prisma: PrismaService) {}
 
-  create(createTodoDto: CreateTodoDto): Todo {
-    const todo: Todo = {
-      id: this.idCounter++,
-      title: createTodoDto.title,
-      description: createTodoDto.description,
-      completed: false,
-      createdAt: new Date(),
-    };
-    this.todos.push(todo);
-    return todo;
+  create(createTodoDto: CreateTodoDto) {
+    return this.prisma.todo.create({
+      data: createTodoDto,
+    });
   }
 
-  findAll(): Todo[] {
-    return this.todos;
+  findAll() {
+    return this.prisma.todo.findMany();
   }
 
-  findOne(id: number): Todo {
-    const todo = this.todos.find((t) => t.id === id);
+  async findOne(id: number) {
+    const todo = await this.prisma.todo.findUnique({
+      where: { id },
+    });
     if (!todo) {
       throw new NotFoundException(`Todo with ID ${id} not found`);
     }
     return todo;
   }
 
-  update(id: number, updateTodoDto: UpdateTodoDto): Todo {
-    const todo = this.findOne(id);
-    Object.assign(todo, updateTodoDto);
-    return todo;
+  async update(id: number, updateTodoDto: UpdateTodoDto) {
+    await this.findOne(id);
+    return this.prisma.todo.update({
+      where: { id },
+      data: updateTodoDto,
+    });
   }
 
-  remove(id: number): void {
-    const index = this.todos.findIndex((t) => t.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`Todo with ID ${id} not found`);
-    }
-    this.todos.splice(index, 1);
+  async remove(id: number) {
+    await this.findOne(id);
+    return this.prisma.todo.delete({
+      where: { id },
+    });
   }
 }
