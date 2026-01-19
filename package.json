@@ -1,13 +1,33 @@
 {
   "name": "nest-todo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack Todo application with NestJS and React",
+  "author": "kris1027",
+  "license": "MIT",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up",
-    "docker:up:build": "docker-compose up --build",
-    "docker:down": "docker-compose down",
-    "docker:down:volumes": "docker-compose down -v",
-    "docker:logs": "docker-compose logs -f",
-    "docker:restart": "docker-compose down && docker-compose up --build",
-    "docker:reset": "docker-compose down -v && docker-compose up --build"
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:backend": "npm run start:dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspaces",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "start": "npm run start --workspace=backend",
+    "start:prod": "npm run start:prod --workspace=backend",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:cov": "npm run test:cov --workspaces --if-present",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules backend/dist frontend/dist",
+    "prisma:generate": "npm run prisma:generate --workspace=backend",
+    "prisma:migrate": "npm run prisma:migrate --workspace=backend",
+    "prisma:studio": "npm run prisma:studio --workspace=backend"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }
