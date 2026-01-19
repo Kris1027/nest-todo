@@ -1,6 +1,6 @@
 services:
-  app:
-    build: .
+  backend:
+    build: ./backend
     ports:
       - "3000:3000"
     environment:
@@ -8,6 +8,14 @@ services:
       - DATABASE_URL=file:./prisma/dev.db
     volumes:
       - todo-data:/app/prisma
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
