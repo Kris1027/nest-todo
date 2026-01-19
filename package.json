@@ -1,0 +1,13 @@
+{
+  "name": "nest-todo",
+  "scripts": {
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up",
+    "docker:up:build": "docker-compose up --build",
+    "docker:down": "docker-compose down",
+    "docker:down:volumes": "docker-compose down -v",
+    "docker:logs": "docker-compose logs -f",
+    "docker:restart": "docker-compose down && docker-compose up --build",
+    "docker:reset": "docker-compose down -v && docker-compose up --build"
+  }
+}
