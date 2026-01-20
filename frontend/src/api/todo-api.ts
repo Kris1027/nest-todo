@@ -1,47 +1,14 @@
 import type { CreateTodoDto, Todo, UpdateTodoDto } from '../types/todo';
+import { api } from './client';
 
-const API_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/todos`
-  : '/api/todos';
+export const getTodos = () => api.get<Todo[]>('/todos');
 
-export async function getTodos(): Promise<Todo[]> {
-  const response = await fetch(API_URL);
-  if (!response.ok) throw new Error('Failed to fetch todos');
-  return response.json();
-}
+export const getTodo = (id: number) => api.get<Todo>(`/todos/${id}`);
 
-export async function getTodo(id: number): Promise<Todo> {
-  const response = await fetch(`${API_URL}/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch todo');
-  return response.json();
-}
+export const createTodo = (data: CreateTodoDto) =>
+  api.post<Todo>('/todos', data);
 
-export async function createTodo(data: CreateTodoDto): Promise<Todo> {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error('Failed to create todo');
-  return response.json();
-}
+export const updateTodo = (id: number, data: UpdateTodoDto) =>
+  api.patch<Todo>(`/todos/${id}`, data);
 
-export async function updateTodo(
-  id: number,
-  data: UpdateTodoDto,
-): Promise<Todo> {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error('Failed to update todo');
-  return response.json();
-}
-
-export async function deleteTodo(id: number): Promise<void> {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) throw new Error('Failed to delete todo');
-}
+export const deleteTodo = (id: number) => api.delete<void>(`/todos/${id}`);
