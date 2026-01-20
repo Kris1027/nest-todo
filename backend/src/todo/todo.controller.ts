@@ -1,3 +1,4 @@
+import { AuthGuard } from '../common/guards/auth.guard';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { TodoService } from './todo.service';
@@ -10,8 +11,10 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 
+@UseGuards(AuthGuard)
 @Controller('todos')
 export class TodoController {
   constructor(private readonly todoService: TodoService) {}
