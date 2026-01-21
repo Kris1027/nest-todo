@@ -14,7 +14,10 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Todos')
+@ApiBearerAuth()
 @UseGuards(AuthGuard)
 @Controller('todos')
 export class TodoController {

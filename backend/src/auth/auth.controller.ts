@@ -8,7 +8,9 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { getRefreshToken } from '../common/decorators/refresh-token.decorator';
 import { GetTokenId } from '../common/decorators/get-token-id.decorator';
 import { Throttle } from '@nestjs/throttler';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
