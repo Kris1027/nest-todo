@@ -31,12 +31,14 @@ export class AuthService {
       },
     });
 
-    const token = await this.jwtService.signAsync({
-      sub: user.id,
-      email: user.email,
-    });
+    const tokens = await this.generateTokens(
+      user.id as number,
+      user.email as string,
+    );
 
-    return { access_token: token };
+    await this.updateRefreshToken(user.id as number, tokens.refresh_token);
+
+    return tokens;
   }
 
   async login(dto: LoginDto) {
@@ -54,11 +56,65 @@ export class AuthService {
     if (!isPasswordValid)
       throw new UnauthorizedException('Invalid credentials');
 
-    const token = await this.jwtService.signAsync({
-      sub: user.id,
-      email: user.email,
+    const tokens = await this.generateTokens(
+      user.id as number,
+      user.email as string,
+    );
+
+    await this.updateRefreshToken(user.id as number, tokens.refresh_token);
+
+    return tokens;
+  }
+
+  async refresh(userId: number, refreshToken: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
     });
 
-    return { access_token: token };
+    if (!user || !user.refreshToken) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const isValid = await bcrypt.compare(
+      refreshToken,
+      user.refreshToken as string,
+    );
+
+    if (!isValid) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const tokens = await this.generateTokens(
+      user.id as number,
+      user.email as string,
+    );
+
+    await this.updateRefreshToken(user.id as number, tokens.refresh_token);
+
+    return tokens;
+  }
+
+  async logout(userId: number) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
+  }
+
+  private async generateTokens(userId: number, email: string) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync({ sub: userId, email }, { expiresIn: '15m' }),
+      this.jwtService.signAsync({ sub: userId, email }, { expiresIn: '7d' }),
+    ]);
+
+    return { access_token: accessToken, refresh_token: refreshToken };
+  }
+
+  private async updateRefreshToken(userId: number, refreshToken: string) {
+    const hashedToken = await bcrypt.hash(refreshToken, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: hashedToken },
+    });
   }
 }
