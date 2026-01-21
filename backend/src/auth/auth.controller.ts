@@ -7,16 +7,27 @@ import { RefreshTokenGuard } from '../common/guards/refresh-token.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { getRefreshToken } from '../common/decorators/refresh-token.decorator';
 import { GetTokenId } from '../common/decorators/get-token-id.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Throttle({
+    short: { limit: 1, ttl: 1000 },
+    medium: { limit: 5, ttl: 60000 },
+    long: { limit: 10, ttl: 300000 },
+  })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @Throttle({
+    short: { limit: 1, ttl: 1000 },
+    medium: { limit: 5, ttl: 60000 },
+    long: { limit: 10, ttl: 300000 },
+  })
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
