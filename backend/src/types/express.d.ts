@@ -3,7 +3,9 @@ declare namespace Express {
     user?: {
       sub: number;
       email: string;
+      tokenId?: number;
     };
     refreshToken?: string;
+    tokenId?: number;
   }
 }

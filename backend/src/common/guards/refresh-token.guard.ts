@@ -23,6 +23,7 @@ export class RefreshTokenGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token);
       request['user'] = payload;
       request['refreshToken'] = token;
+      request['tokenId'] = payload.tokenId;
     } catch {
       throw new UnauthorizedException();
     }

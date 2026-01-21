@@ -6,6 +6,7 @@ import { AuthGuard } from '../common/guards/auth.guard';
 import { RefreshTokenGuard } from '../common/guards/refresh-token.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { getRefreshToken } from '../common/decorators/refresh-token.decorator';
+import { GetTokenId } from '../common/decorators/get-token-id.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -32,17 +33,15 @@ export class AuthController {
   refresh(
     @CurrentUser() userId: number,
     @getRefreshToken() refreshToken: string,
+    @GetTokenId() tokenId: number,
   ) {
-    return this.authService.refresh(userId, refreshToken);
+    return this.authService.refresh(userId, refreshToken, tokenId);
   }
 
   @UseGuards(RefreshTokenGuard)
   @Post('logout')
-  logout(
-    @CurrentUser() userId: number,
-    @getRefreshToken() refreshToken: string,
-  ) {
-    return this.authService.logout(userId, refreshToken);
+  logout(@CurrentUser() userId: number, @GetTokenId() tokenId: number) {
+    return this.authService.logout(userId, tokenId);
   }
 
   @UseGuards(AuthGuard)
