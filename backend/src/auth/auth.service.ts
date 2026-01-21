@@ -9,6 +9,14 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 
+interface StoredRefreshToken {
+  id: number;
+  token: string;
+  userId: number;
+  expiresAt: Date;
+  createdAt: Date;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -67,22 +75,33 @@ export class AuthService {
   }
 
   async refresh(userId: number, refreshToken: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const userTokens = (await this.prisma.refreshToken.findMany({
+      where: { userId },
+    })) as StoredRefreshToken[];
 
-    if (!user || !user.refreshToken) {
+    let foundToken: StoredRefreshToken | null = null;
+
+    for (const t of userTokens) {
+      const isMatch = await bcrypt.compare(refreshToken, t.token);
+      if (isMatch) {
+        foundToken = t;
+        break;
+      }
+    }
+
+    if (!foundToken) {
       throw new UnauthorizedException('Access denied');
     }
 
-    const isValid = await bcrypt.compare(
-      refreshToken,
-      user.refreshToken as string,
-    );
-
-    if (!isValid) {
-      throw new UnauthorizedException('Access denied');
+    if (new Date() > foundToken.expiresAt) {
+      await this.prisma.refreshToken.delete({ where: { id: foundToken.id } });
+      throw new UnauthorizedException('Token expired');
     }
+
+    await this.prisma.refreshToken.delete({ where: { id: foundToken.id } });
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('Access denied');
 
     const tokens = await this.generateTokens(
       user.id as number,
@@ -94,10 +113,23 @@ export class AuthService {
     return tokens;
   }
 
-  async logout(userId: number) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
+  async logout(userId: number, refreshToken: string) {
+    const userTokens = await this.prisma.refreshToken.findMany({
+      where: { userId },
+    });
+
+    for (const t of userTokens) {
+      const isMatch = await bcrypt.compare(refreshToken, t.token as string);
+      if (isMatch) {
+        await this.prisma.refreshToken.delete({ where: { id: t.id } });
+        break;
+      }
+    }
+  }
+
+  async logoutAll(userId: number) {
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId },
     });
   }
 
@@ -112,9 +144,11 @@ export class AuthService {
 
   private async updateRefreshToken(userId: number, refreshToken: string) {
     const hashedToken = await bcrypt.hash(refreshToken, 10);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: hashedToken },
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await this.prisma.refreshToken.create({
+      data: { token: hashedToken, userId, expiresAt },
     });
   }
 }

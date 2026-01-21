@@ -36,9 +36,18 @@ export class AuthController {
     return this.authService.refresh(userId, refreshToken);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(RefreshTokenGuard)
   @Post('logout')
-  logout(@CurrentUser() userId: number) {
-    return this.authService.logout(userId);
+  logout(
+    @CurrentUser() userId: number,
+    @getRefreshToken() refreshToken: string,
+  ) {
+    return this.authService.logout(userId, refreshToken);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('logout-all')
+  logoutAll(@CurrentUser() userId: number) {
+    return this.authService.logoutAll(userId);
   }
 }
