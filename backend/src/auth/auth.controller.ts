@@ -1,10 +1,11 @@
-import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
-import type { Request } from 'express';
+import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { RefreshTokenGuard } from '../common/guards/refresh-token.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { getRefreshToken } from '../common/decorators/refresh-token.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -22,19 +23,22 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Get('me')
-  me(@Req() req: Request) {
-    return req.user;
+  me(@CurrentUser() userId: number) {
+    return { userId };
   }
 
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
-  refresh(@Req() req: Request) {
-    return this.authService.refresh(req.user!.sub, req.refreshToken!);
+  refresh(
+    @CurrentUser() userId: number,
+    @getRefreshToken() refreshToken: string,
+  ) {
+    return this.authService.refresh(userId, refreshToken);
   }
 
   @UseGuards(AuthGuard)
   @Post('logout')
-  logout(@Req() req: Request) {
-    return this.authService.logout(req.user!.sub);
+  logout(@CurrentUser() userId: number) {
+    return this.authService.logout(userId);
   }
 }
