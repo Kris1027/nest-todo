@@ -1,12 +1,5 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -29,22 +22,19 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Get('me')
-  me(@Request() req: ExpressRequest) {
-    return req['user'];
+  me(@Req() req: Request) {
+    return req.user;
   }
 
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
-  refresh(@Request() req: ExpressRequest) {
-    return this.authService.refresh(
-      req['user'].sub as number,
-      req['refreshToken'] as string,
-    );
+  refresh(@Req() req: Request) {
+    return this.authService.refresh(req.user!.sub, req.refreshToken!);
   }
 
   @UseGuards(AuthGuard)
   @Post('logout')
-  logout(@Request() req: ExpressRequest) {
-    return this.authService.logout(req['user'].sub as number);
+  logout(@Req() req: Request) {
+    return this.authService.logout(req.user!.sub);
   }
 }
