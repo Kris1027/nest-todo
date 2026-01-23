@@ -32,3 +32,26 @@ export interface UpdateTodoDto {
   description?: string;
   completed?: boolean;
 }
+
+// Pagination types
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
+export interface TodoQueryParams {
+  page?: number;
+  limit?: number;
+  completed?: boolean;
+  search?: string;
+  sortOrder?: 'asc' | 'desc';
+}
