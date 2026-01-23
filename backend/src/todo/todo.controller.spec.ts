@@ -51,18 +51,39 @@ describe('TodoController', () => {
   });
 
   describe('findAll', () => {
-    it('should return all todos for the user', async () => {
+    it('should return paginated todos for the user', async () => {
       const userId = 1;
-      const todos = [
-        { id: 1, title: 'Todo 1', userId, completed: false },
-        { id: 2, title: 'Todo 2', userId, completed: true },
-      ];
-      mockTodoService.findAll.mockResolvedValue(todos);
+      const query = { page: 1, limit: 10 };
+      const paginatedResult = {
+        data: [
+          { id: 1, title: 'Todo 1', userId, completed: false },
+          { id: 2, title: 'Todo 2', userId, completed: true },
+        ],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 2,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      };
+      mockTodoService.findAll.mockResolvedValue(paginatedResult);
 
-      const result = await controller.findAll(userId);
+      const result = await controller.findAll(query, userId);
 
-      expect(result).toEqual(todos);
-      expect(mockTodoService.findAll).toHaveBeenCalledWith(userId);
+      expect(result).toEqual(paginatedResult);
+      expect(mockTodoService.findAll).toHaveBeenCalledWith(userId, query);
+    });
+
+    it('should pass query params to service', async () => {
+      const userId = 1;
+      const query = { page: 2, limit: 5, completed: true, search: 'test', sortOrder: 'asc' as const };
+      mockTodoService.findAll.mockResolvedValue({ data: [], meta: {} });
+
+      await controller.findAll(query, userId);
+
+      expect(mockTodoService.findAll).toHaveBeenCalledWith(userId, query);
     });
   });
 

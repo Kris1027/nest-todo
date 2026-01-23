@@ -14,6 +14,7 @@ describe('TodoService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -78,28 +79,113 @@ describe('TodoService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all todos for a user', async () => {
-      const userId = 1;
-      const todos = [
-        { id: 1, title: 'Todo 1', userId, completed: false },
-        { id: 2, title: 'Todo 2', userId, completed: true },
-      ];
-      mockPrisma.todo.findMany.mockResolvedValue(todos);
+    const userId = 1;
+    const mockTodos = [
+      { id: 1, title: 'Todo 1', userId, completed: false, createdAt: new Date(), updatedAt: new Date(), description: null },
+      { id: 2, title: 'Todo 2', userId, completed: true, createdAt: new Date(), updatedAt: new Date(), description: null },
+    ];
 
-      const result = await service.findAll(userId);
+    it('should return paginated todos with default query', async () => {
+      const query = {};
+      mockPrisma.todo.findMany.mockResolvedValue(mockTodos);
+      mockPrisma.todo.count.mockResolvedValue(2);
 
-      expect(result).toEqual(todos);
+      const result = await service.findAll(userId, query);
+
+      expect(result.data).toEqual(mockTodos);
+      expect(result.meta).toEqual({
+        page: 1,
+        limit: 10,
+        total: 2,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      });
       expect(mockPrisma.todo.findMany).toHaveBeenCalledWith({
+        where: { userId },
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(mockPrisma.todo.count).toHaveBeenCalledWith({
         where: { userId },
       });
     });
 
-    it('should return empty array if user has no todos', async () => {
+    it('should apply pagination correctly', async () => {
+      const query = { page: 2, limit: 5 };
+      mockPrisma.todo.findMany.mockResolvedValue([mockTodos[0]]);
+      mockPrisma.todo.count.mockResolvedValue(6);
+
+      const result = await service.findAll(userId, query);
+
+      expect(result.meta.page).toBe(2);
+      expect(result.meta.limit).toBe(5);
+      expect(result.meta.totalPages).toBe(2);
+      expect(result.meta.hasNextPage).toBe(false);
+      expect(result.meta.hasPreviousPage).toBe(true);
+      expect(mockPrisma.todo.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 5,
+          take: 5,
+        }),
+      );
+    });
+
+    it('should filter by completed status', async () => {
+      const query = { completed: true };
+      mockPrisma.todo.findMany.mockResolvedValue([mockTodos[1]]);
+      mockPrisma.todo.count.mockResolvedValue(1);
+
+      await service.findAll(userId, query);
+
+      expect(mockPrisma.todo.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId, completed: true },
+        }),
+      );
+    });
+
+    it('should filter by search term', async () => {
+      const query = { search: 'milk' };
       mockPrisma.todo.findMany.mockResolvedValue([]);
+      mockPrisma.todo.count.mockResolvedValue(0);
 
-      const result = await service.findAll(1);
+      await service.findAll(userId, query);
 
-      expect(result).toEqual([]);
+      expect(mockPrisma.todo.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userId,
+            title: { contains: 'milk' },
+          },
+        }),
+      );
+    });
+
+    it('should apply sort order', async () => {
+      const query = { sortOrder: 'asc' as const };
+      mockPrisma.todo.findMany.mockResolvedValue(mockTodos);
+      mockPrisma.todo.count.mockResolvedValue(2);
+
+      await service.findAll(userId, query);
+
+      expect(mockPrisma.todo.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { createdAt: 'asc' },
+        }),
+      );
+    });
+
+    it('should return empty result when no todos exist', async () => {
+      mockPrisma.todo.findMany.mockResolvedValue([]);
+      mockPrisma.todo.count.mockResolvedValue(0);
+
+      const result = await service.findAll(userId, {});
+
+      expect(result.data).toEqual([]);
+      expect(result.meta.total).toBe(0);
+      expect(result.meta.totalPages).toBe(0);
     });
   });
 
