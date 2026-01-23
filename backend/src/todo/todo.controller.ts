@@ -12,9 +12,12 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { PaginatedTodosDto } from './dto/paginated-todos.dto';
+import { FindTodosQueryDto } from './dto/find-todos-query.dto';
 
 @ApiTags('Todos')
 @ApiBearerAuth()
@@ -29,8 +32,15 @@ export class TodoController {
   }
 
   @Get()
-  findAll(@CurrentUser() userId: number) {
-    return this.todoService.findAll(userId);
+  @ApiOkResponse({
+    description: 'Paginated list of todos',
+    type: PaginatedTodosDto,
+  })
+  findAll(
+    @Query() query: FindTodosQueryDto, // Extract all query params
+    @CurrentUser() userId: number,
+  ) {
+    return this.todoService.findAll(userId, query);
   }
 
   @Get(':id')
